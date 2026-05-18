@@ -1,4 +1,5 @@
 # Synthetic Robotic Checkers Dataset Generation with Gemma 4
+
 ### Teaching Robots to See and Act
 
 ### The Problem: Robotics is Starving for Multimodal Training Data
@@ -39,6 +40,19 @@ Candidates are then scored with a weighted rubric (legality worth 3×, captures 
 
 5. Windowed SFT Sample Construction
 After each game, turns are sliced into windows of 1–6 consecutive turns. Each window becomes one supervised fine-tuning sample, containing the full message history (system prompt, alternating user-image / assistant-response turns), per-turn metadata, and a terminal flag with the true game outcome for windows that reach the final ply. This multi-turn structure allows a student model trained on this data to learn both single-step action prediction and longer-horizon board reasoning.
+
+```mermaid
+flowchart TD
+    A[MuJoCo Simulation\nRenders board PNG] -->|image| B[Gemma 4 E4B\nGenerates 4 candidates]
+    B -->|4 candidates| C[Best-of-N Validator\n8 checks + weighted score]
+    C -->|best candidate| D[Robot Arm Execution\nApplies primitives in sim]
+    C -->|all fail| B
+    D -->|turn data| E[SFT Sample Builder\nWindowed multi-turn records]
+    E --> F[(HuggingFace Dataset\nimage + thinking + actions)]
+
+    G[RL Opponent\nAnnealed curriculum] -->|opponent move| A
+    D -->|next turn| A
+```
 
 ### Why Gemma 4 Specifically
 Three properties of Gemma 4 were non-negotiable for this pipeline:
